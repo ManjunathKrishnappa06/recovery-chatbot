@@ -50,9 +50,13 @@
 
     <!-- 2. The Dialogflow Messenger Element -->
     <df-messenger
-      project-id="manjunath-vertex-ai" 
-      agent-id="33519cdf-cd2e-417c-9fa4-de5482015ec5"          
-      language-code="en">
+      project-id="manjunath-vertex-ai"
+      agent-id="33519cdf-cd2e-417c-9fa4-de5482015ec5"
+      language-code="en"
+      max-query-length="-1">
+    <df-messenger-chat-bubble
+      chat-title="postop_monitor">
+    </df-messenger-chat-bubble>
     </df-messenger>
 
     <!-- 3. Our Custom Geolocation Script -->
