@@ -1,94 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Post-Operative Recovery Assistant</title>
-    <style>
-        /* Basic styling to make the page look nice */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f7f6;
-            color: #333;
-        }
-        .container {
-            text-align: center;
-            padding: 40px;
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-        h1 {
-            font-size: 2em;
-            color: #1a73e8;
-        }
-        p {
-            font-size: 1.1em;
-            max-width: 600px;
-            line-height: 1.6;
-        }
-    </style>
-</head>
-<body>
+<!-- 1. The Dialogflow Messenger Library -->
+<script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
 
-    <div class="container">
-        <h1>Post-Operative Recovery Assistant</h1>
-        <p>Welcome. Please use the chat assistant in the bottom right corner to begin your daily check-in or to ask any questions you may have about your recovery.</p>
-    </div>
+<!-- 2. The Dialogflow Messenger Element with YOUR details -->
+<df-messenger
+  project-id="manjunath-vertex-ai"
+  agent-id="33519cdf-cd2e-417c-9fa4-de5482015ec5"
+  language-code="en">
+</df-messenger>
 
-    <!-- ====================================================== -->
-    <!-- START: YOUR DIALOGFLOW AND GEOLOCATION CODE GOES HERE -->
-    <!-- ====================================================== -->
+<!-- 3. Our Custom Geolocation Script -->
+<script>
+  // This script will run after the page loads
+  document.addEventListener('df-messenger-loaded', function (event) {
+    const dfMessenger = document.querySelector('df-messenger');
 
-    <!-- 1. The Dialogflow Messenger Library -->
-    <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
+    // Listen for the event when the user opens the chat window
+    dfMessenger.addEventListener('df-chat-opened', function (event) {
+      console.log("Chat window opened. Requesting user location...");
 
-    <!-- 2. The Dialogflow Messenger Element -->
-    <df-messenger
-      project-id="manjunath-vertex-ai"
-      agent-id="33519cdf-cd2e-417c-9fa4-de5482015ec5"
-      language-code="en"
-      max-query-length="-1">
-      <df-messenger-chat-bubble
-        chat-title="postop_monitor">
-      </df-messenger-chat-bubble>
-    </df-messenger>
+      // Check if the browser has the geolocation feature
+      if (navigator.geolocation) {
+        // Ask the browser for the current position
+        navigator.geolocation.getCurrentPosition(
 
-    <!-- 3. Our Custom Geolocation Script -->
-    <script>
-      document.addEventListener('df-messenger-loaded', function (event) {
-        const dfMessenger = document.querySelector('df-messenger');
-        dfMessenger.addEventListener('df-chat-opened', function (event) {
-          console.log("Chat opened. Attempting to get location...");
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                console.log(`Location obtained: ${lat}, ${lng}`);
-                dfMessenger.setSessionParameters({ latitude: lat, longitude: lng });
-              },
-              (error) => {
-                console.error("Geolocation error: ", error.message);
-                dfMessenger.setSessionParameters({ location_permission: 'denied' });
-              }
-            );
-          } else {
-            console.log("Geolocation is not supported by this browser.");
-            dfMessenger.setSessionParameters({ location_permission: 'unsupported' });
+          // SUCCESS: This function runs if the user clicks "Allow"
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            console.log(`Geolocation successful. Lat: ${lat}, Lng: ${lng}`);
+
+            // This is the most important line:
+            // It sends the coordinates to the current Dialogflow session
+            // as session parameters named 'latitude' and 'longitude'.
+            dfMessenger.setSessionParameters({
+              latitude: lat,
+              longitude: lng
+            });
+          },
+
+          // ERROR: This function runs if the user clicks "Block" or an error occurs
+          (error) => {
+            console.error("Geolocation failed: ", error.message);
+            // Optionally send a parameter to Dialogflow indicating failure
+            dfMessenger.setSessionParameters({
+              location_permission: 'denied_or_failed'
+            });
           }
-        });
-      });
-    </script>
-
-    <!-- ====================================================== -->
-    <!-- END: YOUR DIALOGFLOW AND GEOLOCATION CODE             -->
-    <!-- ====================================================== -->
-
-</body>
-</html>
+        );
+      } else {
+        console.log("Geolocation is not supported by this browser.");
+      }
+    });
+  });
+</script>
