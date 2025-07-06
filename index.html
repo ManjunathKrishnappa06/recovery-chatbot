@@ -4,107 +4,79 @@
   <meta charset="UTF-8">
   <title>AI Post-Op Monitoring Agent</title>
   <style>
-    /* This is all the styling for the page */
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 2em; line-height: 1.6; text-align: center; color: #333; }
-    #status-container { border: 1px solid #e0e0e0; border-radius: 8px; padding: 1.5em; max-width: 600px; margin: 2em auto; background-color: #f9f9f9; }
-    #start-button { font-size: 1.2em; padding: 12px 24px; cursor: pointer; display: none; background-color: #007bff; color: white; border: none; border-radius: 5px; transition: background-color 0.2s; }
-    #start-button:hover { background-color: #0056b3; }
-    /* This rule hides the chat bubble until we are ready */
-    df-messenger { display: none; }
+    #status { margin: 2em; font-style: italic; color: #555; }
+    /* The widget will be created by the script, so no hiding styles are needed */
   </style>
 </head>
 
 <body>
   <h1>AI Post-Op Monitoring Agent</h1>
-  <p>This is a demonstration of my conversational agent. This agent can provide location-based emergency room suggestions.</p>
+  <p>This is a demonstration of my conversational agent.</p>
+  <div id="status">Please share your location to enable all features. The chat will appear once you respond to the permission request.</div>
 
-  <div id="status-container">
-    <p><strong>System Status:</strong> <span id="location-status">Initializing... Please allow location permission when prompted.</span></p>
-    <button id="start-button">Start Secure Check-in</button>
-  </div>
+  <!-- We no longer put the <df-messenger> tag or its script here -->
+  <!-- The script below will handle everything. -->
 
-  <!-- The Dialogflow bootstrap script. It must be here to load the widget's code. -->
-  <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
-
-  <!-- The messenger tag is here, but it's invisible because of the CSS style rule above. -->
-  <df-messenger
-    chat-title="Post-Op Monitor"
-    agent-id="33519cdf-cd2e-417c-9fa4-de5482015ec5"
-    language-code="en"
-  ></df-messenger>
-
-  <!-- ========================================================== -->
-  <!-- === ALL JAVASCRIPT LOGIC IS NOW SAFELY CONTAINED HERE === -->
-  <!-- ========================================================== -->
+  <!-- ==================================================================== -->
+  <!-- === FINAL, OFFICIAL SCRIPT TO PRE-CONFIGURE AND LOAD THE AGENT === -->
+  <!-- ==================================================================== -->
   <script>
-    // We wait for the entire window (including the df-messenger script) to be fully loaded.
+    // This is the main function that runs when the page loads.
     window.addEventListener('load', function() {
-      const statusElement = document.getElementById('location-status');
-      const startButton = document.getElementById('start-button');
-      const dfMessenger = document.querySelector('df-messenger');
+      const statusElement = document.getElementById('status');
+      
+      // This function will be called AFTER we have the location data.
+      // Its only job is to create the configuration and load the main DF script.
+      function initializeMessenger(queryParams) {
+        console.log("Initializing Dialogflow Messenger with config:", queryParams);
 
-      let locationParams = null; // This object will store our coordinates.
-
-      // This function gets called ONLY when the user clicks the "Start" button.
-      function startChat() {
-        console.log("Start button clicked. Initializing chat session.");
-
-        // Generate a fresh session ID for a brand new conversation.
-        const sessionID = Math.random().toString(36).substring(7);
-        dfMessenger.setAttribute('session-id', sessionID);
-
-        // Now, we make the chat widget visible and open it.
-        dfMessenger.style.display = 'block';
-        dfMessenger.open();
-
-        // Prepare the special event to kick off the conversation
-        const welcomeEvent = {
-          event: 'WELCOME_WITH_PARAMS', 
+        // --- STEP 1: Define the magic configuration object ---
+        window.dfMessengerConfig = {
+          agentId: '33519cdf-cd2e-417c-9fa4-de5482015ec5',
+          languageCode: 'en',
+          chatTitle: 'Post-Op Monitor',
+          // Generate a new session ID for a fresh conversation.
+          sessionId: Math.random().toString(36).substring(7),
+          // Pass our location data (or an empty object) into the config.
+          queryParams: queryParams 
         };
 
-        // If we successfully got the location, attach it to the event.
-        if (locationParams) {
-          welcomeEvent.parameters = locationParams;
-          console.log("Sending WELCOME event with location:", locationParams);
-        } else {
-          console.log("Sending WELCOME event without location data.");
-        }
+        // --- STEP 2: Dynamically create and load the bootstrap script ---
+        const script = document.createElement('script');
+        script.src = "https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js";
+        script.async = true;
+        document.body.appendChild(script);
 
-        // Send the event to Dialogflow. This starts the chat.
-        dfMessenger.sendRequest('event', welcomeEvent);
-
-        // Hide the start button and status box after the chat begins.
-        document.getElementById('status-container').style.display = 'none';
+        // --- STEP 3: Update the UI ---
+        statusElement.textContent = "Agent is loaded. Please use the chat widget in the bottom right corner.";
       }
 
-      // ---------- Main Logic: This runs as soon as the page is loaded ----------
+      // --- This is where the flow starts: Ask for location ---
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          // SUCCESS Case: The user clicked "Allow".
+          // SUCCESS Case: We got the location.
           (position) => {
-            statusElement.textContent = "Location acquired. You may now begin the check-in.";
-            // Store the coordinates for later use when the button is clicked.
-            locationParams = {
-              'user_latitude': position.coords.latitude.toString(),
-              'user_longitude': position.coords.longitude.toString()
-            };
-            startButton.style.display = 'block'; // Make the start button visible.
+            const lat = position.coords.latitude.toString();
+            const lon = position.coords.longitude.toString();
+            console.log(`Location success. Lat: ${lat}, Lon: ${lon}`);
+            // Prepare the parameters and initialize the messenger.
+            initializeMessenger({ user_latitude: lat, user_longitude: lon });
           },
-          // ERROR Case: The user clicked "Block".
+          // ERROR Case: User denied permission.
           (error) => {
-            statusElement.innerHTML = `Location not shared. Emergency features will be disabled. You can still begin.`;
-            startButton.style.display = 'block'; // Show the start button anyway.
+            console.error(`Geolocation error: ${error.message}`);
+            // Initialize the messenger without location data.
+            initializeMessenger({});
           }
         );
       } else {
-        // This runs if the browser is too old to support geolocation.
-        statusElement.textContent = "Geolocation is not supported by this browser. Click 'Start Check-in' to begin.";
-        startButton.style.display = 'block';
+        // Geolocation is not supported by the browser.
+        console.log("Geolocation not supported.");
+        initializeMessenger({});
       }
-
-      // Finally, we tell the start button to run our 'startChat' function when it is clicked.
-      startButton.addEventListener('click', startChat);
     });
   </script>
+
 </body>
 </html>
