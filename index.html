@@ -32,7 +32,8 @@
             // This is the most important line:
             // It sends the coordinates to the current Dialogflow session
             // as session parameters named 'latitude' and 'longitude'.
-            dfMessenger.setSessionParameters({
+            dfMessenger.set('sessionInfo', {}).set('parameters',
+              {
               latitude: lat,
               longitude: lng
             });
