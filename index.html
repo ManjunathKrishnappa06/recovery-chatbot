@@ -41,6 +41,9 @@
           // Pass our location data (or an empty object) into the config.
           queryParams: queryParams 
         };
+        
+        const dfMessengerHtml = document.createElement('df-messenger');
+        document.body.appendChild(dfMessengerHtml);
 
         // --- STEP 2: Dynamically create and load the bootstrap script ---
         const script = document.createElement('script');
