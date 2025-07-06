@@ -33,8 +33,10 @@
 
         // --- STEP 1: Define the magic configuration object ---
         window.dfMessengerConfig = {
-          agentId: 'projects/manjunath-vertex-ai/locations/global/agents/33519cdf-cd2e-417c-9fa4-de5482015ec5',
-          languageCode: 'en',
+          project-id="manjunath-vertex-ai"
+          agent-id="33519cdf-cd2e-417c-9fa4-de5482015ec5"
+          language-code="en"
+          max-query-length="-1",
           chatTitle: 'Post-Op Monitor',
           // Generate a new session ID for a fresh conversation.
           sessionId: Math.random().toString(36).substring(7),
